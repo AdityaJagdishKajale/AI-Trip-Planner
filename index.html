@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Trip Planner | Premium</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+      body {
+        font-family: "Outfit", sans-serif;
+        padding: 20px;
+        line-height: 1.6;
+        background-color: #f8f9fa;
+      }
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+      input,
+      button {
+        font-family: "Outfit", sans-serif;
+      }
+
+      /* Styling for the parsed AI response */
+      #response-container {
+        margin-top: 30px;
+        padding: 20px;
+        border-top: 2px solid #eee;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: white;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+      }
+      th {
+        background-color: #007bff;
+        color: white;
+      }
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+      img {
+        max-width: 100%;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1 style="text-align: center">AI Trip Planner</h1>
+
+      <label>Place Where you want to Visit:- </label>
+      <input
+        type="text"
+        id="destination"
+        placeholder="e.g. Varkala, Kerala"
+        style="width: 95%; padding: 10px; margin: 10px 0"
+      />
+      <br />
+      <label>Starting from which City:- </label>
+      <input
+        type="text"
+        id="start_city"
+        placeholder="e.g. Bangalore"
+        style="width: 95%; padding: 10px; margin: 10px 0"
+      />
+      <br />
+      <label>Start Date of Trip:- </label>
+      <input
+        type="date"
+        id="start_date"
+        style="padding: 10px; margin: 10px 0"
+      />
+      <br />
+      <label>Number of Days:- </label>
+      <input
+        type="number"
+        id="days"
+        style="padding: 10px; margin: 10px 0"
+        placeholder="e.g. 3"
+      />
+      <br />
+
+      <div style="text-align: center; margin-top: 20px">
+        <button
+          id="generate-btn"
+          style="
+            padding: 15px 30px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+          "
+        >
+          Generate Optimized Itinerary
+        </button>
+      </div>
+
+      <div id="response-container"></div>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import { GoogleGenerativeAI } from "@google/generative-ai";
+
+      let btn = document.querySelector("#generate-btn");
+      let responseDiv = document.querySelector("#response-container");
+      let days = document.querySelector("#days");
+      let destination = document.querySelector("#destination");
+      let start_date = document.querySelector("#start_date");
+      let start_city = document.querySelector("#start_city");
+
+      async function getGeminiResponse() {
+        // Display loading indicator
+        responseDiv.innerHTML =
+          "<p align='center'><em>🚀 Curating your custom itinerary...</em></p>";
+
+        // Note: In production, keep your API key on a backend server!
+        let api_key = "YOUR_API_KEY_HERE";
+        let genAI = new GoogleGenerativeAI(`${api_key}`);
+        let model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        // Your exact requested prompt logic preserved here
+        const query = `You are an expert World Travel Planner and Budget Consultant. Your goal is to create a comprehensive, day-by-day travel itinerary for ${destination.value} starting on ${start_date.value} for a duration of ${days.value}.
+
+Task: Provide three distinct travel packages: Budget (Cheap), Mid-Range (Medium), and Luxury. For each category, you must provide a detailed, chronological itinerary including:
+
+Transportation & Logistics: > * Specific flight/train/bus routes from ${start_city.value}.
+Estimated ticket prices and the best platforms to book them.
+
+Local transport advice (e.g., Metro passes for budget, private drivers for luxury).
+
+Accommodation: > * One specific hotel, hostel, or resort recommendation per category.
+
+Explain why it fits that category (location, amenities, or cost-savings).
+
+Day-by-Day Itinerary: > * Morning, Afternoon, and Evening activities for every day.
+
+Exact names of famous landmarks, hidden gems, and local markets.
+
+Detailed "How-To" instructions (e.g., "Take the Exit 4 at the station," "Book tickets 48 hours in advance online").
+
+Dining & Nightlife: > * Recommendations for specific cafes, world-famous restaurants, breweries, or clubs.
+
+Typical cost per meal in that category.
+
+Activities & Experiences: > * Water sports, hiking, or cultural tours with estimated pricing per person.
+
+Constraint: All recommendations must be realistic for the year 2026. Use a table format to summarize the total estimated cost for each of the three categories at the end. Be crisp, professional, and include local tips to avoid tourist traps.`;
+
+        try {
+          const result = await model.generateContent(query);
+          let responseText = await result.response.text();
+
+          // 2. PARSING: Convert Markdown string to HTML using Marked
+          responseDiv.innerHTML = marked.parse(responseText);
+        } catch (error) {
+          console.error(error);
+          responseDiv.innerHTML =
+            "<p style='color:red; text-align:center;'>Error: Could not fetch itinerary. Check your API key or data inputs.</p>";
+        }
+      }
+
+
+      btn.addEventListener("click", getGeminiResponse);
+    </script>
+  </body>
+</html>
